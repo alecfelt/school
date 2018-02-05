@@ -1,0 +1,11 @@
+Alec Felt  1430374  allfelt@ucsc.edu
+pa5  README
+
+Graph.c
+Graph.h
+List.c
+List.h
+GraphTest.c
+FindComponents.c       I passed &time into my Visit helper function
+README
+Makefile

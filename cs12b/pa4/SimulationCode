@@ -1,0 +1,281 @@
+//-----------------------------------------------------------------------------
+// Alec Felt  1430374  allfelt@ucsc.edu
+// Simulation.java
+//-----------------------------------------------------------------------------
+//
+import java.io.*;
+import java.util.Scanner;
+
+public class Simulation{
+
+
+   public static void main(String[] args) throws IOException{
+
+	int time = 0;
+//////////////////////////////////////////////////////////////////
+//    1.  check command line arguments
+////////////////////////////////////////////////////////////////////
+	if(args.length != 1) {
+
+	}
+////////////////////////////////////////////////////////////
+//    2.  open files for reading and writing
+//////////////////////////////////////////////////////
+	String file = args[0]; //filename
+	String line = null;
+	Object storage;
+	Object storageCopy;
+	Object storageFinished;
+	
+	FileReader yes = new FileReader(file); //makes the file a FileReader
+	BufferedReader buff = new BufferedReader(yes); //makes the FileReader a BufferedReader
+	line = buff.readLine(); //gets the first line as a string 'line'
+	int m = Integer.parseInt(line); //the # of jobs
+	
+	PrintWriter fileRPT = new PrintWriter(args[0] + ".rpt", "UTF-8");//open rpt file
+	PrintWriter fileTRC = new PrintWriter(args[0] + ".trc", "UTF-8");//opens trc file
+////////////////////////////////////////////////////////////////////			
+//    3.  read in m jobs from input file
+/////////////////////////////////////////////////////////////////////////
+	storage = new Queue(); //the storage queue
+	storageCopy = new Queue();//copy of the stoarage queue
+	storageFinished = new Queue(); //the finished job queue
+	int jobAmount = m; 
+	while(jobAmount > 0) { //makes sure there are jobs left to read
+		line = buff.readLine();//reads the next line of the file
+		String[] token = line.split(" ");
+		int arrival = Integer.parseInt(token[0]);//reads first char of the line and converts it to an int
+		int duration = Integer.parseInt(token[1]);//reads third char of the line and converts it to an int
+		Object job = new Job(arrival, duration);//creates a Job object from the two integers on the current line of the file
+		((Queue)storage).enqueue(job);//enqueues the Job object onto the storage queue
+		((Queue)storageCopy).enqueue(job);//enqueues the Job object onto the copy of the storage queue
+		jobAmount--;//decrements the amount of jobs that still need to be enqueued
+	}
+
+	yes.close();//closes the read file
+	buff.close();
+	
+	fileRPT.println("Report file: " + args[0] + ".rpt");//prints to the RPT file
+	fileRPT.println(m + " Jobs:");
+	fileRPT.println(((Queue)storage).toString());
+	fileRPT.println("****************************************************");
+	fileTRC.println("Trace file: " + args[0] + ".trc");//prints to TRC file
+	fileTRC.println(m + " Jobs:");
+	fileTRC.println(((Queue)storage).toString());
+	
+//////////////////////////////////////////////////////////////////
+//    4.  run simulation with n processors for n=1 to n=m-1  {
+/////////////////////////////////////////////////////////////////
+	for(int n = 1; n < m; n++) {
+		time = 0;
+		fileTRC.println("*********************");//prints to TRC file
+		fileTRC.println("Processors: " + n);
+		fileTRC.println("*********************");
+		fileTRC.println("\ntime= " + time);//prints the time and contents of all processors to TRC file
+		fileTRC.println("storage: " + ((Queue)storage).toString());
+		for(int l = 1; l <= n; l++) {
+			fileTRC.println(l + ": ");
+		}	
+////////////////////////////////////////////////////////////////////////////////////////////////
+//    5.      declare and initialize an array of n processor Queues and any 
+//            necessary storage Queues
+///////////////////////////////////////////////////////////////////////////////////////////////////
+		Object[] queueArray = new Object[n+2];//initializes the queue array with room for n processors and 2 storage queues
+		queueArray[0] = storage;//the first indici is the storage queue
+		queueArray[n+1] = storageFinished;//the last indici is the finished job queue
+		int i = 1;//garbage variable
+		while(i <= n) {//puts a Queue object in every indici of queueArray bseides the stoarage queues
+			queueArray[i] = new Queue();
+			i++;
+		}
+////////////////////////////////////////////////////////////////////////////////////////
+//    6.      while unprocessed jobs remain{
+/////////////////////////////////////////////////////////////////////////////////////////
+		while(((Queue)storage).length() > 0 || ((Queue)storageFinished).length() < m) {//checks to see if there are still jobs left to be processed
+///////////////////////////////////////////////////////////////////////////////////////
+//    7.          determine the time of the next arrival or finish event and 
+//                update time
+////////////////////////////////////////////////////////////////////////////////////////
+			int minArrival;
+			if(((Queue)storage).length() > 0) {	
+				Object min = ((Queue)storage).peek();//the arrival time of the first Job on the storage queue
+				minArrival = ((Job)min).getArrival();
+			} else {
+				minArrival = Integer.MAX_VALUE;
+			}
+			int minFinish = Integer.MAX_VALUE;//the earliest finish time of all the Jobs at the front of their respective processors
+			int minLength = Integer.MAX_VALUE;//the smallest length of all the processorsi
+			for(int g = 1; g <= n; g++) {//goes through every processor
+				if(((Queue)queueArray[g]).length() > 0) {
+					Object fin = ((Queue)queueArray[g]).peek();//the finish time of front item for this processor
+					int finish = ((Job)fin).getFinish();
+					int length = ((Queue)queueArray[g]).length();//the length of this processor
+					if(finish < minFinish) {//checks if the finish time is less than the current earliest finish time
+						minFinish = finish;//if true, the finish time is now the new minFinish
+					}
+					if(length < minLength) {//checks if the length is less than the current shortes length
+						minLength = length;//if true, the length is now the new minLength
+					}
+				} else {
+					minLength = 0;
+      				}
+			}
+	
+			int[] minFinishArray = new int[n];//array for keeping track of which processors have a finish time == minFinish
+			int minFinishSize = 0;//the # of processors that have the a finish time == minFinish
+			int minLengthIndici = -1;//the first indici of queueArray that has a process with a length of minLength
+			for(int h = 1; h <= n; h++) {//goes through every processor
+				if(((Queue)queueArray[h]).length() > 0) {
+					Object fin = ((Queue)queueArray[h]).peek();//finish time of front item of this processor
+					int finish = ((Job)fin).getFinish();
+					int length = ((Queue)queueArray[h]).length();//length of this processor
+					if(finish == minFinish) {//compares finish to minFinish
+						minFinishArray[minFinishSize] = h;//stores indici of the processor in the array
+						minFinishSize++;//increments the number of processors with minFinish time
+					}
+					if(length == minLength && minLengthIndici == -1) {//compares length to minLength
+						minLengthIndici = h;//stores indici of the processor in the array
+					}				
+				} else {
+					if(minLengthIndici == -1) {//if length of processor is zero
+						minLengthIndici = h;
+					}
+				}
+			}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////			
+//    8.          complete all processes finishing now
+//                if there are any jobs arriving now, assign them to a processor 
+//                Queue of minimum length and with lowest index in the queue array.
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			if(minFinish <= minArrival) {//if a finish event occurs beforei or at the same time as an arrival event
+				time = minFinish;//updates the time
+				for(i = 0; i < minFinishSize; i++) {//goes through each processor that has a minFinish finish time. Array is already in ascending order
+					Object item1 = ((Queue)queueArray[minFinishArray[i]]).dequeue();//dequeues the current processor
+					((Queue)storageFinished).enqueue(item1);//enqueues the item onto the finished job queue
+					if(((Queue)queueArray[minFinishArray[i]]).length() > 0) {//if there are more items left in the processor queue
+						item1 = ((Queue)queueArray[minFinishArray[i]]).peek();//gets the new Object at the front of the queue
+						((Job)item1).computeFinishTime(time);//sets the finish time for that object
+					}
+				}	
+				if(minFinish == minArrival) {
+					for(int g = 1; g <= n; g++) {//goes through every processor
+						if(((Queue)queueArray[g]).length() > 0) {
+							int length = ((Queue)queueArray[g]).length();//the length of this processor
+							if(length < minLength) {//checks if the length is less than the current shortes length
+								minLength = length;//if true, the length is now the new minLength
+							}
+						} else {
+							minLength = 0;
+      						}
+					}
+					Object item1 = ((Queue)storage).dequeue();//gets the object arriving
+					minLengthIndici = -1;//the first indici of queueArray that has a process with a length of minLength
+						for(int h = 1; h <= n; h++) {//goes through every processor
+							if(((Queue)queueArray[h]).length() > 0) {
+								Object fin = ((Queue)queueArray[h]).peek();//finish time of front item of this processor
+								int length = ((Queue)queueArray[h]).length();//length of this processor
+								if(length == minLength && minLengthIndici == -1) {//compares length to minLength
+									minLengthIndici = h;//stores indici of the processor in the arr`ay
+								}				
+							} else {
+								if(minLengthIndici == -1) {//if processor length in zero
+									minLengthIndici = h;
+								}
+							}
+						}
+
+					((Queue)queueArray[minLengthIndici]).enqueue(item1);//enqueues the object onto the processor with the smallest length
+									          //the 0th element in the minLengthArray is the lowest indici of the queueArray
+					if(((Queue)queueArray[minLengthIndici]).length() == 1) {
+						item1 = ((Queue)queueArray[minLengthIndici]).peek();
+						((Job)item1).computeFinishTime(time);
+					}
+				}					
+				
+			} else {//if an arrival event occurs before a finish
+				time = minArrival;//sets the time
+				Object item = ((Queue)storage).dequeue();//gets the object ready for arrival
+				((Queue)queueArray[minLengthIndici]).enqueue(item);//enqueues the object onto the processor with the smallest length
+				if(((Queue)queueArray[minLengthIndici]).length() == 1) { //the 0th element in the minLengthArray is the lowest indici of the queueArray
+					Object X = ((Queue)queueArray[minLengthIndici]).peek();
+					((Job)X).computeFinishTime(time);
+				}
+
+			} 
+			
+			
+			fileTRC.println("\ntime= " + time);//prints the time and contents of all processors to TRC file
+			fileTRC.println("storage: " + ((Queue)storage).toString());
+			for(i = 1; i <= n; i++) {
+				Queue H = ((Queue)queueArray[i]);
+				fileTRC.println(i + ": " + H.toString());
+			}	
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//    9.     } end loop
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		}
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//    10.     compute the total wait, maximum wait, and average wait for 
+//            all Jobs, then reset finish times
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	
+		long totalWait = 0;//variable for the total wait time of all the jobs in the storageFinished queue, declared as long for large values
+		long maxWait = -1;//variable for the maximum wait time of all the jobs in the storageFinished queue
+		float averageWait;//variable for the average wait time of all the Jobs
+		Object Y;//Object to keep track of all of the jobs in the queue
+
+		for(Y = ((Queue)storageFinished); ((Queue)Y).length() > 0;) {//calulations for all of the wait times above
+			Object wait1 = ((Queue)Y).peek();
+			long wait = ((Job)wait1).getWaitTime();
+			totalWait += wait;
+			if(wait > maxWait) {
+				maxWait = wait;
+			}
+			((Queue)Y).dequeue();
+		}
+		averageWait = ((float)totalWait)/((float)m);
+		
+
+		if(n == 1) {//prints the wait times we're interested in to RPT file
+			fileRPT.println(n + " processor: totalWait=" 
+				+ totalWait + ", maxWait=" + maxWait + 
+				", averageWait=" + averageWait);
+		} else {
+			fileRPT.println(n + " processors: totalWait=" 
+				+ totalWait + ", maxWait=" + maxWait + 
+				", averageWait=" + averageWait);
+
+		}
+
+		String usa = ((Queue)storageCopy).toString();//copying contents from storageCopy to storage
+		String[] USA = usa.split("\\D");//parsing
+		int[] reArrival = new int[m];//arrival value array
+		int[] reDuration = new int[m];//duration value array
+		reArrival[0] = Integer.parseInt(USA[1]);
+		reDuration[3] = Integer.parseInt(USA[3]);
+		Y = new Job(reArrival[0], reDuration[3]);
+		((Queue)storage).enqueue(Y);//copies first job from storageCopy to storage
+		for(i = 1; i < m; i++) {//copies the rest of the jobs
+			int ok = (i*7 + 1);
+			int no = (i*7 + 3);
+			reArrival[i] = Integer.parseInt(USA[ok]);
+			reDuration[i] = Integer.parseInt(USA[no]);
+			Y = new Job(reArrival[i], reDuration[i]);
+			((Queue)storage).enqueue(Y);
+		}
+
+	
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//    11. } end loop
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//    12. close input and output files
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ 	fileRPT.close();//closes the 2 out files
+	fileTRC.close(); 
+   }
+}

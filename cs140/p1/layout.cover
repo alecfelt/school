@@ -1,0 +1,142 @@
+       # layout.py
+       # ---------
+       # Licensing Information: Please do not distribute or publish solutions to this
+       # project. You are free to use and extend these projects for educational
+       # purposes. The Pacman AI projects were developed at UC Berkeley, primarily by
+       # John DeNero (denero@cs.berkeley.edu) and Dan Klein (klein@cs.berkeley.edu).
+       # For more info, see http://inst.eecs.berkeley.edu/~cs188/sp09/pacman.html
+       
+    1: from util import manhattanDistance
+    1: from game import Grid
+    1: import os
+    1: import random
+       
+    1: VISIBILITY_MATRIX_CACHE = {}
+       
+    2: class Layout:
+         """
+         A Layout manages the static information about the game board.
+    1:   """
+         
+    1:   def __init__(self, layoutText):
+   63:     self.width = len(layoutText[0])
+   63:     self.height= len(layoutText)
+   63:     self.walls = Grid(self.width, self.height, False)
+   63:     self.food = Grid(self.width, self.height, False)
+   63:     self.capsules = []
+   63:     self.agentPositions = []
+   63:     self.numGhosts = 0
+   63:     self.processLayoutText(layoutText)
+   63:     self.layoutText = layoutText
+           # self.initializeVisibilityMatrix()
+           
+    1:   def getNumGhosts(self):
+    1:     return self.numGhosts
+           
+    1:   def initializeVisibilityMatrix(self):
+           global VISIBILITY_MATRIX_CACHE
+           if reduce(str.__add__, self.layoutText) not in VISIBILITY_MATRIX_CACHE:
+             from game import Directions
+             vecs = [(-0.5,0), (0.5,0),(0,-0.5),(0,0.5)]
+             dirs = [Directions.NORTH, Directions.SOUTH, Directions.WEST, Directions.EAST]
+             vis = Grid(self.width, self.height, {Directions.NORTH:set(), Directions.SOUTH:set(), Directions.EAST:set(), Directions.WEST:set(), Directions.STOP:set()})
+             for x in range(self.width):
+               for y in range(self.height):
+                 if self.walls[x][y] == False:
+                   for vec, direction in zip(vecs, dirs):
+                     dx, dy = vec
+                     nextx, nexty = x + dx, y + dy
+                     while (nextx + nexty) != int(nextx) + int(nexty) or not self.walls[int(nextx)][int(nexty)] :
+                       vis[x][y][direction].add((nextx, nexty))
+                       nextx, nexty = x + dx, y + dy
+             self.visibility = vis      
+             VISIBILITY_MATRIX_CACHE[reduce(str.__add__, self.layoutText)] = vis
+           else:
+             self.visibility = VISIBILITY_MATRIX_CACHE[reduce(str.__add__, self.layoutText)]
+             
+    1:   def isWall(self, pos):
+           x, col = pos
+           return self.walls[x][col]
+         
+    1:   def getRandomLegalPosition(self):
+           x = random.choice(range(self.width))
+           y = random.choice(range(self.height))
+           while self.isWall( (x, y) ):
+             x = random.choice(range(self.width))
+             y = random.choice(range(self.height))
+           return (x,y)
+       
+    1:   def getRandomCorner(self):
+           poses = [(1,1), (1, self.height - 2), (self.width - 2, 1), (self.width - 2, self.height - 2)]
+           return random.choice(poses)
+       
+    1:   def getFurthestCorner(self, pacPos):
+           poses = [(1,1), (1, self.height - 2), (self.width - 2, 1), (self.width - 2, self.height - 2)]
+           dist, pos = max([(manhattanDistance(p, pacPos), p) for p in poses])
+           return pos
+         
+    1:   def isVisibleFrom(self, ghostPos, pacPos, pacDirection):
+           row, col = [int(x) for x in pacPos]
+           return ghostPos in self.visibility[row][col][pacDirection]
+         
+    1:   def __str__(self):
+           return "\n".join(self.layoutText)
+           
+    1:   def deepCopy(self):
+   62:     return Layout(self.layoutText[:])
+           
+    1:   def processLayoutText(self, layoutText):
+           """
+           Coordinates are flipped from the input format to the (x,y) convention here
+           
+           The shape of the maze.  Each character  
+           represents a different type of object.   
+            % - Wall                               
+            . - Food
+            o - Capsule
+            G - Ghost
+            P - Pacman
+           Other characters are ignored.
+           """
+   63:     maxY = self.height - 1
+  504:     for y in range(self.height):       
+ 9261:       for x in range(self.width):
+ 8820:         layoutChar = layoutText[maxY - y][x]  
+ 8820:         self.processLayoutChar(x, y, layoutChar)
+   63:     self.agentPositions.sort()
+  126:     self.agentPositions = [ ( i == 0, pos) for i, pos in self.agentPositions]
+         
+    1:   def processLayoutChar(self, x, y, layoutChar):
+ 8820:     if layoutChar == '%':      
+ 5040:       self.walls[x][y] = True
+ 3780:     elif layoutChar == '.':
+  819:       self.food[x][y] = True 
+ 2961:     elif layoutChar == 'o':    
+             self.capsules.append((x, y))   
+ 2961:     elif layoutChar == 'P':    
+   63:       self.agentPositions.append( (0, (x, y) ) )
+ 2898:     elif layoutChar in ['G']:    
+             self.agentPositions.append( (1, (x, y) ) )
+             self.numGhosts += 1
+ 2898:     elif layoutChar in  ['1', '2', '3', '4']:
+             self.agentPositions.append( (int(layoutChar), (x,y)))
+             self.numGhosts += 1 
+    1: def getLayout(name, back = 2):
+    1:   if name.endswith('.lay'):
+           layout = tryToLoad('layouts/' + name)
+           if layout == None: layout = tryToLoad(name)
+         else:
+    1:     layout = tryToLoad('layouts/' + name + '.lay')
+    1:     if layout == None: layout = tryToLoad(name + '.lay')
+    1:   if layout == None and back >= 0:
+           curdir = os.path.abspath('.')
+           os.chdir('..')
+           layout = getLayout(name, back -1)
+           os.chdir(curdir)
+    1:   return layout
+       
+    1: def tryToLoad(fullname):
+    1:   if(not os.path.exists(fullname)): return None
+    1:   f = open(fullname)
+    8:   try: return Layout([line.strip() for line in f])
+    1:   finally: f.close()

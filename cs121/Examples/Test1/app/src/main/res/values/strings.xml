@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Test1</string>
+    <string name="field">Hello</string>
+    <string name="label">main</string>
+
+</resources>

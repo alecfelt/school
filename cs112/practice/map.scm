@@ -1,0 +1,5 @@
+(define (mapp func lst)
+	(if (null? lst) '()
+		(cons (func (car lst)) (mapp func (cdr lst)))
+	)
+)

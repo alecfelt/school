@@ -1,0 +1,10 @@
+(define (depth lst)
+	(define (d l acc)
+		(if (null? l) acc
+			(if (pair? (car l)) (max (d (car l) (+ acc 1)) (d (cdr l) acc))
+				(d (cdr l) acc)
+			)
+		)
+	)
+	(d lst 1)
+)

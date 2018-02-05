@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Asg3</string>
+    <string name="not_moved">Your Phone Did Not Move</string>
+    <string name="moved">Your Phone Moved</string>
+</resources>

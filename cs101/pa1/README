@@ -1,0 +1,7 @@
+//Alec Felt     allfelt         pa1
+
+README
+Lex.java   main program that handles file io and uses List.java
+List.java   class containing all the private and public methods of a list
+ListClient.java   test client for the List module
+Makefile   creates an executable and compiles all files that are .java   

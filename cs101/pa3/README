@@ -1,0 +1,10 @@
+README  pa3
+Alec Felt     1430374     allfelt@ucsc.edu
+
+README   -     info about pa3
+MatrixTest.java    -    file for testing Matrix class and methods in isolation
+ListTest.java    -     file for testing List class / methods in isolation
+List.java   -    file containg List module and methods
+Matrix.java    -    file containg Matrix module/methods
+Makefile   -    file for compilation
+Sparse.java    -     main file using all of the other modules

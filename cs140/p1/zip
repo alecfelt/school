@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rm solution.zip
+zip solution.zip search.py searchAgents.py

@@ -1,0 +1,11 @@
+(define (split lst)
+	(define (s l1 l2 l)
+		(if (null? l) (cons l1 (list l2))
+			(if (> (length l1) (length l2)) (s l1 (append l2 (list (car l))) (cdr l))
+				(s (append l1 (list (car l))) l2 (cdr l))
+			)
+		)
+	)
+	(s '() '() lst)
+)
+				

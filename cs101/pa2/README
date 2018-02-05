@@ -1,0 +1,9 @@
+Alec Felt  allfelt@ucsc.edu  1430374
+pa2 README
+
+README
+Makefile	for compiling and memort leak check
+Lex.c 		main program that uses List ADT to alphabetize input file lines
+List.c 		public and private functions and fields for List ADT
+ListClient.c	untouched test client for the List ADT
+List.h		List header file for prototypes and public functions

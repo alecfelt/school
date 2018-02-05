@@ -1,0 +1,9 @@
+Alec Felt  1430374  allfelt@ucsc.edu
+
+README
+Search.java
+Makefile
+
+typing 'make' into the command line creates a jar file called Search
+type 'Search' file target target ...
+to search the file for the targets.

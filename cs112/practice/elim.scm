@@ -1,0 +1,8 @@
+(define (elim sym l)
+	(if (null? l) '()
+		(if (= (car l) sym) 
+			(cdr l)
+			(elim sym (cdr l))
+		)
+	)
+)

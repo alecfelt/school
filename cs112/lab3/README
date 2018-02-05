@@ -1,0 +1,4 @@
+Alec Felt   1430374   allfelt
+
+I have all the code for compression.
+I can construct my encoding tree when decompressing but can't read the compressed respresentation of the file.

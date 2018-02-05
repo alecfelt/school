@@ -1,0 +1,10 @@
+Alec Felt  1430374  allfelt@ucsc.edu
+
+README 
+Dictionary.java
+Makefile
+DictionaryTest.java
+DictionaryClient.java
+DictionaryInterface.java
+KeyNotFoundException.java
+DuplicateKeyException.java
